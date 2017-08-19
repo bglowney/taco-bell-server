@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# install global packages
+npm install -g grunt-cli typings mocha
