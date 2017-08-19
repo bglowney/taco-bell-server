@@ -1,6 +1,6 @@
 {
   "name": "taco-bell-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Taco Bell Server",
   "main": "index.js",
   "scripts": {
