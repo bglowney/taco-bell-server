@@ -26,8 +26,7 @@ startServer([
             o.a.set(params.a.get());
             return o;
         },
-        request: () => { return new InputA(); },
-        response: () => { return new OutputA(); }
+        request: () => { return new InputA(); }
     },
     {
         path: '/error',

@@ -19,5 +19,4 @@ export interface ServerHandler<P extends Request,R extends Response,E extends Se
     handle: (params: P) => R
     onError?: (e: Error, params: P) => E
     request?: RequestProvider<P>
-    response?: ResponseProvider<R>
 }
