@@ -4,5 +4,6 @@ export {
     Request,
     ResponseProvider,
     Response,
-    ServerHandler
+    ServerHandler,
+    ServerInput
 } from "./src/ServerHandler";

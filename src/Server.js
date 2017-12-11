@@ -5,6 +5,7 @@ const fs = require("fs");
 const url = require("url");
 const sprintf_js_1 = require("sprintf-js");
 const moment = require("moment");
+const taco_bell_1 = require("taco-bell");
 function endsWith(str, other) {
     if (other == undefined)
         return false;
@@ -117,8 +118,13 @@ function startServer(_handlers, port = 8000) {
                                 if (handler.request) {
                                     requestObj = handler.request();
                                     try {
-                                        if (method === "GET")
-                                            requestObj.deserialize(JSON.stringify(params));
+                                        if (method === "GET") {
+                                            if (taco_bell_1.instanceofDeserializable(requestObj))
+                                                requestObj.deserialize(JSON.stringify(params));
+                                            else {
+                                                taco_bell_1.deserialize.call(requestObj, JSON.stringify(params));
+                                            }
+                                        }
                                         else
                                             requestObj.deserialize(JSON.stringify(bodyJson));
                                     }

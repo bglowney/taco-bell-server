@@ -2,6 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const Server_1 = require("../src/Server");
 const taco_bell_1 = require("taco-bell");
+class GetInputA {
+    constructor() {
+        this.a = new taco_bell_1.ModelElement();
+    }
+}
 class InputA extends taco_bell_1.AbstractSerializable {
     constructor() {
         super(...arguments);
@@ -32,7 +37,7 @@ Server_1.startServer([
             o.a.set(params.a.get());
             return o;
         },
-        request: () => { return new InputA(); }
+        request: () => { return new GetInputA(); }
     },
     {
         path: '/error',

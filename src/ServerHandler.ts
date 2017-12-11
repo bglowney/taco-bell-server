@@ -1,6 +1,6 @@
-import {Deserializable, Serializable, HttpMethod} from "taco-bell";
+import {Deserializable, Serializable, HttpMethod, HttpGetParams} from "taco-bell";
 
-export type RequestProvider<P extends Request> = () => P;
+export type RequestProvider<P extends Request | HttpGetParams> = () => P;
 
 export interface Request extends Deserializable {
 
@@ -12,7 +12,9 @@ export interface Response extends Serializable {
 
 }
 
-export interface ServerHandler<P extends Request,R extends Response,E extends Serializable> {
+export type ServerInput = HttpGetParams | Request;
+
+export interface ServerHandler<P extends ServerInput,R extends Response,E extends Serializable> {
     path: string
     method: HttpMethod
     validate?: (params: P) => boolean

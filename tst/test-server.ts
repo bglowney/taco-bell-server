@@ -1,6 +1,11 @@
 // be careful to import from index here for testing properly
 import {startServer} from "../src/Server";
-import {AbstractSerializable, ModelElement} from "taco-bell";
+import {AbstractSerializable, ModelElement, HttpGetParams} from "taco-bell";
+
+class GetInputA implements HttpGetParams {
+    [key: string]: ModelElement<any>;
+    readonly a = new ModelElement<string>();
+}
 
 class InputA extends AbstractSerializable {
     readonly a = new ModelElement<string>();
@@ -18,15 +23,15 @@ startServer([
     {
         path: '/echo',
         method: 'GET',
-        validate: (params: InputA): boolean => {
+        validate: (params: GetInputA): boolean => {
             return params != undefined && params.a.get() != undefined;
         },
-        handle: (params: InputA): OutputA => {
+        handle: (params: GetInputA): OutputA => {
             let o = new OutputA();
             o.a.set(params.a.get());
             return o;
         },
-        request: () => { return new InputA(); }
+        request: () => { return new GetInputA(); }
     },
     {
         path: '/error',

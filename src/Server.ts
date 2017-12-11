@@ -6,8 +6,8 @@ import {sprintf} from 'sprintf-js';
 import moment = require('moment');
 import {IncomingMessage} from "http";
 import {ServerResponse} from "http";
-import {ServerHandler, Request, Response} from "./ServerHandler";
-import {Serializable} from "taco-bell";
+import {ServerHandler, Request, Response, ServerInput} from "./ServerHandler";
+import {Serializable, deserialize, instanceofDeserializable} from "taco-bell";
 
 function endsWith(str: string, other: string): boolean {
     if (other == undefined)
@@ -18,10 +18,10 @@ function endsWith(str: string, other: string): boolean {
 }
 
 // define server
-export function startServer<P extends Request,R extends Response,E extends Serializable>(_handlers?: ServerHandler<P, R, E>[],
+export function startServer(_handlers?: ServerHandler<ServerInput, Response, Serializable>[],
                                                                                          port = 8000): void {
 
-    const handlers: {[path: string]: {[method: string]: ServerHandler<P,R,E>}} = {};
+    const handlers: {[path: string]: {[method: string]: ServerHandler<ServerInput, Response, Serializable>}} = {};
     for (let handler of _handlers) {
         if (!handlers[handler.path])
             handlers[handler.path] = {};
@@ -131,14 +131,19 @@ export function startServer<P extends Request,R extends Response,E extends Seria
                             if (handlers[path] && handlers[path][method]) {
                                 const handler = handlers[path][method];
 
-                                let requestObj: P;
+                                let requestObj: ServerInput;
                                 if (handler.request) {
                                     requestObj = handler.request();
                                     try {
-                                        if (method === "GET")
-                                            requestObj.deserialize(JSON.stringify(params));
-                                        else
-                                            requestObj.deserialize(JSON.stringify(bodyJson));
+                                        if (method === "GET") {
+                                            if (instanceofDeserializable(requestObj))
+                                                (requestObj as Request).deserialize(JSON.stringify(params));
+                                            else {
+                                                // its an HttpGetParams
+                                                deserialize.call(requestObj, JSON.stringify(params));
+                                            }
+                                        } else
+                                            (requestObj as Request).deserialize(JSON.stringify(bodyJson));
                                     } catch (e) {
                                         handleUnrecognizedRequest(res);
                                         break;
@@ -149,7 +154,7 @@ export function startServer<P extends Request,R extends Response,E extends Seria
                                     || !handler.validate // request is valid by default
                                     || handler.validate(requestObj)) {
 
-                                    let responseObj: R | E;
+                                    let responseObj: Response | Serializable;
                                     try {
                                         responseObj = handler.handle(requestObj);
                                     } catch (e) {
