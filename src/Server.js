@@ -13,6 +13,26 @@ function endsWith(str, other) {
         return true;
     return str.substring(str.length - other.length, str.length) == other;
 }
+function co(gen) {
+    let gInstance = gen();
+    return new Promise(function (resolve, reject) {
+        function iter(yieldValue) {
+            try {
+                let next = gInstance.next(yieldValue);
+                if (next.done) {
+                    resolve(next.value);
+                    return;
+                }
+                next.value.then(iter, reject);
+            }
+            catch (e) {
+                reject(e);
+            }
+        }
+        iter();
+    });
+}
+exports.co = co;
 function startServer(_handlers, port = 8000) {
     const handlers = {};
     for (let handler of _handlers) {
@@ -98,72 +118,76 @@ function startServer(_handlers, port = 8000) {
         }
         function handleRequestCallback() {
             try {
-                if (isFileRequest(path)) {
-                    let fileName = path.substring(1);
-                    handleFileRequest(fileName);
-                }
-                else {
-                    let pathMethod = path + ":" + method.toUpperCase();
-                    switch (pathMethod) {
-                        case ":GET":
-                        case "/:GET":
-                        case "/index:GET":
-                        case "/index.html:GET":
-                            handleFileRequest("./index.html");
-                            break;
-                        default:
-                            if (handlers[path] && handlers[path][method]) {
-                                const handler = handlers[path][method];
-                                let requestObj;
-                                if (handler.request) {
-                                    requestObj = handler.request();
-                                    try {
-                                        if (method === "GET") {
-                                            if (taco_bell_1.instanceofDeserializable(requestObj))
-                                                requestObj.deserialize(JSON.stringify(params));
-                                            else {
-                                                taco_bell_1.deserialize.call(requestObj, JSON.stringify(params));
+                co(function* () {
+                    if (isFileRequest(path)) {
+                        let fileName = path.substring(1);
+                        handleFileRequest(fileName);
+                    }
+                    else {
+                        let pathMethod = path + ":" + method.toUpperCase();
+                        switch (pathMethod) {
+                            case ":GET":
+                            case "/:GET":
+                            case "/index:GET":
+                            case "/index.html:GET":
+                                handleFileRequest("./index.html");
+                                break;
+                            default:
+                                if (handlers[path] && handlers[path][method]) {
+                                    const handler = handlers[path][method];
+                                    let requestObj;
+                                    if (handler.request) {
+                                        requestObj = handler.request();
+                                        try {
+                                            if (method === "GET") {
+                                                if (taco_bell_1.instanceofDeserializable(requestObj))
+                                                    requestObj.deserialize(JSON.stringify(params));
+                                                else {
+                                                    taco_bell_1.deserialize.call(requestObj, JSON.stringify(params));
+                                                }
                                             }
+                                            else
+                                                requestObj.deserialize(JSON.stringify(bodyJson));
                                         }
-                                        else
-                                            requestObj.deserialize(JSON.stringify(bodyJson));
+                                        catch (e) {
+                                            handleUnrecognizedRequest(res);
+                                            break;
+                                        }
                                     }
-                                    catch (e) {
-                                        handleUnrecognizedRequest(res);
-                                        break;
+                                    let valid = !handler.request
+                                        || !handler.validate;
+                                    if (!valid && handler.validate)
+                                        valid = yield Promise.resolve(handler.validate(requestObj));
+                                    if (valid) {
+                                        let responseObj;
+                                        try {
+                                            responseObj = yield Promise.resolve(handler.handle(requestObj));
+                                        }
+                                        catch (e) {
+                                            error = e;
+                                            if (handler.onError)
+                                                responseObj = yield Promise.resolve(handler.onError(e, requestObj));
+                                            statusCode = 500;
+                                        }
+                                        const serialized = responseObj ? responseObj.serialize() : "";
+                                        res.writeHead(statusCode, {
+                                            "Content-Type": "application/json",
+                                            'Content-Length': serialized.length
+                                        });
+                                        res.write(serialized);
                                     }
-                                }
-                                if (!handler.request
-                                    || !handler.validate
-                                    || handler.validate(requestObj)) {
-                                    let responseObj;
-                                    try {
-                                        responseObj = handler.handle(requestObj);
+                                    else {
+                                        statusCode = 400;
                                     }
-                                    catch (e) {
-                                        error = e;
-                                        if (handler.onError)
-                                            responseObj = handler.onError(e, requestObj);
-                                        statusCode = 500;
-                                    }
-                                    const serialized = responseObj ? responseObj.serialize() : "";
-                                    res.writeHead(statusCode, {
-                                        "Content-Type": "application/json",
-                                        'Content-Length': serialized.length
-                                    });
-                                    res.write(serialized);
+                                    res.statusCode = statusCode;
+                                    res.end();
                                 }
                                 else {
-                                    statusCode = 400;
+                                    handleUnrecognizedRequest(res);
                                 }
-                                res.statusCode = statusCode;
-                                res.end();
-                            }
-                            else {
-                                handleUnrecognizedRequest(res);
-                            }
+                        }
                     }
-                }
+                });
             }
             catch (e) {
                 error = e;

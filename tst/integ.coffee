@@ -13,6 +13,26 @@ describe 'taco-bell server', () ->
         assert.equal body, '{"a":"aaa"}'
         done()
 
+  describe 'valid slow GET request', () ->
+    it 'should handle async logic', (done) ->
+      request 'http://localhost:8000/slow?a=b', (err, res, body) ->
+        if err
+          throw err
+        assert.ok res
+        assert.equal res.statusCode, 200
+        assert.equal body, '{"a":"slow"}'
+        done()
+
+  describe 'invalid slow GET request', () ->
+    it 'should handle async error logic', (done) ->
+      request 'http://localhost:8000/slow?a=bad', (err, res, body) ->
+        if err
+          throw err
+        assert.ok res
+        assert.equal res.statusCode, 500
+        assert.equal body, '{"message":"slow"}'
+        done()
+
   describe 'invalid GET request', () ->
     it 'should return a 400', (done) ->
       request 'http://localhost:8000/echo', (err, res, body) ->

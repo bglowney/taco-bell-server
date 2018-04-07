@@ -20,10 +20,12 @@ module.exports = (grunt) ->
         options:
           bare: true
         files:
-          'tst/test.js': 'tst/test.coffee'
+          'tst/integ.js': 'tst/integ.coffee'
     mochaTest:
-      default:
-        src: 'tst/test.js'
+      integ:
+        src: 'tst/integ.js'
+      unit:
+        src: 'tst/unit.js'
 
   grunt.initConfig config
 
@@ -35,4 +37,4 @@ module.exports = (grunt) ->
 
   grunt.registerTask 'default', ['ts', 'coffee:compile']
   grunt.registerTask 'server', ['execute:server']
-  grunt.registerTask 'test', ['mochaTest:default']
+  grunt.registerTask 'test', ['mochaTest:unit','mochaTest:integ']

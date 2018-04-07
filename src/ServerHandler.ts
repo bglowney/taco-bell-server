@@ -17,8 +17,8 @@ export type ServerInput = HttpGetParams | Request;
 export interface ServerHandler<P extends ServerInput,R extends Response,E extends Serializable> {
     path: string
     method: HttpMethod
-    validate?: (params: P) => boolean
-    handle: (params: P) => R
-    onError?: (e: Error, params: P) => E
+    validate?: (params: P) => boolean | Promise<boolean>
+    handle: (params: P) => R | Promise<R>
+    onError?: (e: Error, params: P) => E | Promise<E>
     request?: RequestProvider<P>
 }

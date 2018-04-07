@@ -45,5 +45,32 @@ startServer([
             error.message.set(e.message + ": " + params.a.get());
             return error;
         }
+    },
+    {
+        path: '/slow',
+        method: 'GET',
+        validate: (params: InputA): Promise<boolean> => {
+            return new Promise<boolean>(function (resolve, reject) {
+                setTimeout(resolve.bind(resolve,true), 100);
+            });
+        },
+        request: () => { return new InputA(); },
+        handle: (params: InputA): any => {
+            if (params.a.get() == "bad")
+                throw new Error("contrived");
+
+            return new Promise<OutputA>(function (resolve, reject) {
+                let result = new OutputA();
+                result.a.set('slow');
+                setTimeout(resolve.bind(resolve, result), 100);
+            });
+        },
+        onError: (e: Error, params: InputA) => {
+            return new Promise<CustomErrorMessage>(function (resolve, reject) {
+                let error = new CustomErrorMessage();
+                error.message.set("slow");
+                setTimeout(resolve.bind(resolve, error), 100);
+            });
+        }
     }
 ]);
